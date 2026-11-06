@@ -1,0 +1,105 @@
+Option A vs Option B (Visual RAG Toolkit benchmarking datasets/protocols)
+
+Goal
+- Evaluate ColPali/ColSmol-style visual document retrieval with:
+  - single-stage full late-interaction MaxSim (query tokens vs doc tokens)
+  - two-stage retrieval (stage-1 cheap prefetch, stage-2 full MaxSim rerank)
+- Use Qdrant-backed evaluation for “real world” behavior (ANN prefetch + vector fetch costs).
+
+
+Vocabulary: DocVQA / InfoVQA / TabFQuAD / TAT-DQA / ArXivQA / SHIFT
+- These names refer to “task families” / subsets in the ViDoRe benchmark.
+- In this repo we currently reference them as HuggingFace datasets like:
+  - vidore/docvqa_test_subsampled
+  - vidore/infovqa_test_subsampled
+  - vidore/tabfquad_test_subsampled
+  - vidore/tatdqa_test
+  - vidore/arxivqa_test_subsampled
+  - vidore/shiftproject_test
+- Important: These are still “ViDoRe benchmark datasets” (not completely unrelated external datasets),
+  but they are derived from those task domains.
+
+
+What is “qrels mapping”?
+- qrels = query relevance labels used by IR metrics (NDCG/MRR/Recall).
+- Concretely: a mapping like:
+    qrels[query_id] = {doc_id_1: relevance, doc_id_2: relevance, ...}
+- In a correct shared-corpus benchmark, doc_id refers to an item in a corpus (pages/images),
+  and query_id refers to a query/question; qrels tells which corpus items are relevant.
+
+
+Option A: Official ViDoRe protocol (recommended for paper comparability)
+What it means
+- Evaluate each ViDoRe dataset using the “official” definition of:
+  - query set
+  - corpus (shared across queries)
+  - qrels (relevance mapping from queries to corpus items)
+  - metrics (NDCG@K, MRR@K, Recall@K as reported by the benchmark)
+- Results are directly comparable to other systems and can be reported as “ViDoRe benchmark results”.
+
+Why it matters
+- Strongest credibility and easiest to defend in a paper.
+- Minimizes reviewer skepticism about custom evaluation.
+
+Notes about THIS repo today
+- The current script `benchmarks/run_vidore.py` DOES NOT implement the official shared-corpus protocol.
+  It currently constructs an artificial 1:1 regime:
+    - query_id = q_{idx}
+    - doc_id   = d_{idx}
+    - qrels[q_{idx}] = {d_{idx}: 1}
+  This makes the “corpus size” equal to the number of examples and makes each doc relevant to only one query.
+- For Option A, we should later update the benchmark pipeline to:
+  1) load the official corpus + query split for each dataset
+  2) index the corpus into Qdrant using visual-rag-toolkit indexing (vectors: initial, mean_pooling, global_pooling)
+  3) run retrieval against Qdrant (not in-memory NumPy)
+  4) compute official metrics using qrels
+
+Implementation checklist for later (Option A)
+- Determine the true ViDoRe dataset schema for each subset:
+  - Which fields identify the query?
+  - Which fields identify the relevant document/page id?
+  - Is the corpus provided as a separate split/file/dataset?
+- Ensure consistent doc_id keys across:
+  - indexing pipeline ids
+  - qrels doc ids
+- Ensure we don’t “leak” query-paired doc only; we must have a shared corpus per dataset.
+
+
+Option B: Custom “scale-stress” protocol (not leaderboard-comparable)
+What it means
+- Build a larger shared corpus to stress scalability and show the value of two-stage retrieval.
+- A practical version using only ViDoRe subsets:
+  - Merge corpora from multiple ViDoRe subsets into one larger corpus
+    e.g. corpus = DocVQA corpus + InfoVQA corpus + TabFQuAD corpus + ...
+  - Run queries from one subset (or all subsets) against the merged corpus.
+  - Keep qrels pointing to the original relevant doc ids (those docs now still exist in the merged corpus).
+
+Why it matters
+- Produces “latency vs corpus size” curves and “quality retention vs prefetch_k” curves
+  that better reflect production deployments (thousands → millions of pages).
+
+Tradeoffs
+- Not directly comparable to the official ViDoRe leaderboard.
+- Must be explicitly described as a custom scaling experiment in the paper.
+
+Custom qrels mapping in Option B
+- If doc IDs are preserved during corpus merge, then qrels does not need to change:
+    qrels[query_id] still points to doc_id(s) that are in the merged corpus.
+- If doc IDs collide between subsets, then you must namespace them:
+    doc_id := "{subset_name}:{original_doc_id}"
+  and update qrels doc ids accordingly.
+
+
+Is ViDoRe “small”?
+- ViDoRe subsets used here are commonly “subsampled” (e.g., ~500 queries) for quick runs.
+- Even if ViDoRe is not “tiny”, it is still far smaller than a production corpus (hundreds of thousands to millions of pages).
+- That’s why Option B exists as an additional scaling experiment (often paired with an in-domain corpus).
+
+
+Where this repo currently defines the subsets
+- `visual-rag-toolkit/benchmarks/run_vidore.py` has `VIDORE_DATASETS` mapping.
+
+
+
+
+

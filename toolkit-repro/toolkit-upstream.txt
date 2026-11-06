@@ -1,0 +1,6 @@
+﻿Upstream repository: https://github.com/Ara-Yeroyan/visual-rag-toolkit
+Upstream commit: 262e01575bd8d9599a98466dce6d12b88f45ea16
+Upstream package version: 0.2.0
+Integration: source files tracked directly by the outer repository
+License: see visual-rag-toolkit/LICENSE
+Local modifications: inspect the outer repository Git history and diffs

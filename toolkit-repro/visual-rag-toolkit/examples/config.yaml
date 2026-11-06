@@ -1,0 +1,89 @@
+# Visual RAG Toolkit Configuration
+# Copy this file and modify for your project
+
+# Project name - used for Cloudinary folder structure
+project_name: "my_visual_docs"
+
+# Qdrant Configuration
+qdrant:
+  collection_name: "visual_documents"
+  embedding_dim: 128
+  timeout: 60
+  # HNSW index configuration
+  hnsw:
+    m: 32
+    ef_construct: 100
+    full_scan_threshold: 10000
+    on_disk: true
+
+# Model Configuration
+model:
+  # Available models:
+  # - vidore/colSmol-500M (default, fast, 500M params)
+  # - vidore/colpali-v1.3 (larger, more accurate)
+  # - vidore/colqwen2-v1.0 (multilingual)
+  name: "vidore/colSmol-500M"
+  # Device: auto, cuda, mps, cpu
+  device: "auto"
+  # Batch size for embedding
+  batch_size: 8
+
+# Batch sizes for different stages
+batching:
+  embedding_batch_size: 8    # Images per embedding batch
+  upload_batch_size: 8       # Points per Qdrant upload
+
+# Delays/throttling (in seconds)
+delays:
+  between_files: 5           # Delay before processing each new PDF
+  between_uploads: 0.5       # Delay between upload batches
+
+# PDF Processing
+processing:
+  dpi: 140                   # DPI for image conversion (140 = good balance)
+  jpeg_quality: 95           # JPEG quality for saved images
+
+# Cloudinary Configuration
+# Folders will be: {project_name}/original and {project_name}/resized
+cloudinary:
+  jpeg_quality: 95
+  timeout: 10                # Timeout per upload attempt (seconds)
+  max_retries: 3             # Number of retry attempts per image
+
+# Saliency Map Configuration (for visualization)
+saliency:
+  alpha: 0.4                 # Overlay transparency
+  colormap: "Reds"           # Matplotlib colormap
+  threshold_percentile: 50   # Only highlight above this percentile
+
+# Search Configuration
+search:
+  strategy: "multi_vector"   # multi_vector (SOTA), pooled (fast), hybrid
+  prefetch_k: 200            # Candidates for two-stage retrieval
+  top_k: 10                  # Final results
+
+# Payload Index Fields (for Qdrant filtering)
+# Core fields are always indexed
+payload_indexes:
+  - field: "filename"
+    type: "keyword"
+  - field: "page_number"
+    type: "integer"
+  - field: "total_pages"
+    type: "integer"
+  - field: "has_text"
+    type: "bool"
+  # Add your custom fields:
+  # - field: "year"
+  #   type: "integer"
+  # - field: "source"
+  #   type: "keyword"
+  # - field: "district"
+  #   type: "keyword"
+
+
+
+
+
+
+

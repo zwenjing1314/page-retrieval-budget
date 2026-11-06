@@ -51,6 +51,10 @@ conda activate page-retrieval-budget
 这是本机逐步验证的候选组合，不是作者公布的完整冻结环境。
 具体包清单和镜像身份见 P0 记录。
 
+作者源码以普通文件直接纳入本项目 Git 仓库，不使用子模块。
+原始上游身份见 [toolkit-upstream.txt](./toolkit-repro/toolkit-upstream.txt)；
+后续适配通过外层仓库的 diff 和提交历史记录。作者 LICENSE 保留。
+
 作者源码位于 [toolkit-repro/visual-rag-toolkit](toolkit-repro/visual-rag-toolkit)，
 固定提交为 `262e01575bd8d9599a98466dce6d12b88f45ea16`，
 以 editable 方式安装。

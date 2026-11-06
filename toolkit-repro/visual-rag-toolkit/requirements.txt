@@ -1,0 +1,33 @@
+# Core dependencies
+numpy>=1.21.0
+Pillow>=9.0.0
+tqdm>=4.60.0
+pyyaml>=6.0
+python-dotenv>=0.19.0
+
+# Vector database
+qdrant-client>=1.7.0
+
+# Streamlit UI
+streamlit>=1.28.0
+httpx>=0.24.0
+
+# Data processing
+pandas
+altair
+datasets
+
+# PDF processing
+pdf2image>=1.16.0
+pypdf>=3.0.0
+
+# ColPali dependencies (torch/transformers come from base image)
+colpali-engine>=0.3.0
+einops>=0.8.0
+peft>=0.13.0
+
+# Mistral tokenizer (ReasoningEffort required by transformers>=5.3)
+mistral-common>=1.10.0
+
+# Image CDN
+cloudinary>=1.30.0
