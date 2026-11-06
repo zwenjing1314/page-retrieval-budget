@@ -46,7 +46,9 @@ def pool(vectors):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("action", choices=["prepare", "resume-check", "retrieve"])
+parser.add_argument("--pages", type=int, default=3)
 args = parser.parse_args()
+assert 3 <= args.pages <= 8, "Diagnostic page count must be 3..8"
 
 record = ROOT / "records" / (
     "p1-real-cache-" + args.action + "-"
@@ -89,7 +91,7 @@ try:
     assert len(page_map) == 452 and len(query_map) == 232
 
     page_ids = ["63"] + [
-        str(x) for x in sorted(int(k) for k in page_map if k != "63")[:2]
+        str(x) for x in sorted(int(k) for k in page_map if k != "63")[:args.pages - 1]
     ]
     query_ids = [str(q["query_id"]) for q in entry_meta["queries"]]
     assert len(query_ids) == 2 and "0" in query_ids
