@@ -1,0 +1,8 @@
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+colpali-engine==0.3.10
+transformers==4.51.3
+peft==0.15.2
+accelerate==1.6.0
+datasets==3.5.0
+qdrant-client==1.14.2

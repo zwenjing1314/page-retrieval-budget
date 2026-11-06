@@ -1,0 +1,61 @@
+{
+  "scope": "documentation only",
+  "status": "PASS",
+  "moves": {
+    "复现项目核查与首选方案.md": "docs/research/复现项目核查与首选方案.md",
+    "启动核查.md": "docs/research/启动核查.md",
+    "核查材料_omnicolpress.md": "docs/research/核查材料_omnicolpress.md",
+    "核查材料_其他复现项目.md": "docs/research/核查材料_其他复现项目.md",
+    "研究交接说明.md": "docs/handoff/研究交接说明.md",
+    "新窗口启动提示词.md": "docs/handoff/新窗口启动提示词.md",
+    "新窗口首条消息.txt": "docs/handoff/新窗口首条消息.txt",
+    "README.before-refresh-20261106-221201.md": "docs/handoff/history/README.before-refresh-20261106-221201.md"
+  },
+  "original_files": [
+    {
+      "path": "README.md",
+      "sha256": "32ba4c9d1bb81ae5970a5bb9ed76053249c9e07545f87d62b5eab5fd7940efb8"
+    },
+    {
+      "path": "复现执行计划与验收标准.md",
+      "sha256": "ae8aed7465ce79453987159393ae82c76e22effa52f34057bde5fabff4bbe315"
+    },
+    {
+      "path": "复现项目核查与首选方案.md",
+      "sha256": "03f325532dc26b7c86f2d77dccfb19803a76370b5561d8e70b672ca23a607f73"
+    },
+    {
+      "path": "启动核查.md",
+      "sha256": "db2b2abb974c3d365439d8bfcfacddeca37eae11f222cd05f7ff086e82e58058"
+    },
+    {
+      "path": "核查材料_omnicolpress.md",
+      "sha256": "4a669d87cf118a33cbe490e94e73927d23026a6002a27769c9cbb6bd5ac8f51b"
+    },
+    {
+      "path": "核查材料_其他复现项目.md",
+      "sha256": "a12b069380c6c7861932d4121e7b5b010f9bfc6a47797f54ef95e20643e422fc"
+    },
+    {
+      "path": "研究交接说明.md",
+      "sha256": "240be19802ec9aaecfcf472aa01a2210f7ce6cc5c354382f9ad6132c5e2a72da"
+    },
+    {
+      "path": "新窗口启动提示词.md",
+      "sha256": "da09ac7d642f0f9a75136eba2d1f2c8392eebae5f11fadd38095357f840226d9"
+    },
+    {
+      "path": "新窗口首条消息.txt",
+      "sha256": "533c11da92d31a58b8cd24e6116b312236574665991ed995c0fb0d329678a3dc"
+    },
+    {
+      "path": "README.before-refresh-20261106-221201.md",
+      "sha256": "5529596c307e2e7f0a1a8565f7ad6225a1aa4e4e469a9a7f816a31dc6dc871e1"
+    }
+  ],
+  "checked_project_markdown_links": 46,
+  "newline_fix": "Active documents use UTF-8 with LF",
+  "before_newline_fix": "C:\\Users\\WenJing\\Documents\\WorkTransfer\\page-retrieval-budget\\docs\\archive\\document-reorganization-20261106-222802-98329e\\before-newline-fix-20261106-223040",
+  "historical_readme": "byte-identical to original backup",
+  "execution_plan": "root path retained; only document reference changed"
+}
