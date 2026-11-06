@@ -233,19 +233,13 @@ def _load_failed_union_ids(
 def _remove_failed_from_qrels(
     qrels: Dict[str, Dict[str, int]], failed_ids: set
 ) -> Tuple[Dict[str, Dict[str, int]], int]:
-    removed = 0
-    if not failed_ids:
-        return qrels, 0
-    out: Dict[str, Dict[str, int]] = {}
-    for qid, rels in (qrels or {}).items():
-        new_rels: Dict[str, int] = {}
-        for did, score in (rels or {}).items():
-            if str(did) in failed_ids:
-                removed += 1
-                continue
-            new_rels[str(did)] = int(score)
-        out[str(qid)] = new_rels
-    return out, removed
+    """Never repair an incomplete index by deleting relevance labels."""
+    if failed_ids:
+        raise RuntimeError(
+            f"Incomplete index: {len(failed_ids)} failed/missing page IDs. "
+            "Stop evaluation; preserve all qrels and repair the index."
+        )
+    return qrels, 0
 
 
 def _filter_failed_ids_to_missing(
@@ -636,6 +630,11 @@ def _index_beir_corpus(
         failure_log, dataset_name=dataset_name, union_namespace=union_namespace
     )
     previously_failed_ids = set(failed_ids)
+    if failed_ids:
+        raise RuntimeError(
+            "Existing failure log found. Resolve and document failures "
+            "before resuming; do not silently skip pages."
+        )
 
     existing_ids = set()
     if resume:
@@ -755,6 +754,23 @@ def _index_beir_corpus(
                         },
                     )
                     failed_ids.add(pid)
+        if uploaded != len(points):
+            stop_event.set()
+            _append_jsonl(
+                failure_log,
+                {
+                    "dataset": dataset_name,
+                    "collection": collection_name,
+                    "stage": "upload",
+                    "expected": len(points),
+                    "uploaded": uploaded,
+                    "error": "Incomplete upload",
+                },
+            )
+            raise RuntimeError(
+                f"Incomplete upload: expected {len(points)}, got {uploaded}. "
+                "Indexing stopped without dropping pages."
+            )
         return uploaded
 
     def _drain(block: bool) -> None:
@@ -855,48 +871,23 @@ def _index_beir_corpus(
                     return_token_info=True,
                     show_progress=False,
                 )
-            except Exception:
-                # Retry per-doc to isolate flaky backend / corrupted sample issues.
-                embeddings = []
-                token_infos = []
-                for doc_i, img_i, crop_meta_i in zip(batch, images, crop_metas):
-                    try:
-                        e1, t1 = embedder.embed_images(
-                            [img_i],
-                            batch_size=1,
-                            return_token_info=True,
-                            show_progress=False,
-                        )
-                        embeddings.append(e1[0])
-                        token_infos.append(t1[0])
-                    except Exception as e_single:
-                        source_doc_id_i = str(
-                            (doc_i.payload or {}).get("source_doc_id") or doc_i.doc_id
-                        )
-                        union_doc_id_i = _union_point_id(
-                            dataset_name=dataset_name,
-                            source_doc_id=source_doc_id_i,
-                            union_namespace=union_namespace,
-                        )
-                        if str(union_doc_id_i) not in failed_ids:
-                            _append_jsonl(
-                                failure_log,
-                                {
-                                    "dataset": dataset_name,
-                                    "collection": collection_name,
-                                    "model": model_name,
-                                    "source_doc_id": str(source_doc_id_i),
-                                    "doc_id": str(getattr(doc_i, "doc_id", "")),
-                                    "union_doc_id": str(union_doc_id_i),
-                                    "error": str(e_single),
-                                },
-                            )
-                            failed_ids.add(str(union_doc_id_i))
-                        existing_ids.add(str(union_doc_id_i))
-                        skipped_docs += 1
-                if pbar is not None:
-                    pbar.update(batch_total)
-                continue
+            except Exception as exc:
+                _append_jsonl(
+                    failure_log,
+                    {
+                        "dataset": dataset_name,
+                        "collection": collection_name,
+                        "stage": "encoding",
+                        "source_doc_ids": [
+                            str((d.payload or {}).get("source_doc_id"))
+                            for d in batch
+                        ],
+                        "error": repr(exc),
+                    },
+                )
+                raise RuntimeError(
+                    "Encoding failed; indexing stopped without dropping pages."
+                ) from exc
 
             for doc, emb, token_info, crop_meta, original_img, embed_img in zip(
                 batch, embeddings, token_infos, crop_metas, original_images, images
@@ -1020,24 +1011,21 @@ def _index_beir_corpus(
                                         print(msg)
                                 else:
                                     print(msg)
-                except Exception as e_single:
-                    if str(union_doc_id) not in failed_ids:
-                        _append_jsonl(
-                            failure_log,
-                            {
-                                "dataset": dataset_name,
-                                "collection": collection_name,
-                                "model": model_name,
-                                "source_doc_id": str(source_doc_id),
-                                "doc_id": str(getattr(doc, "doc_id", "")),
-                                "union_doc_id": str(union_doc_id),
-                                "error": str(e_single),
-                            },
-                        )
-                        failed_ids.add(str(union_doc_id))
-                    existing_ids.add(str(union_doc_id))
-                    skipped_docs += 1
-                    continue
+                except Exception as exc:
+                    _append_jsonl(
+                        failure_log,
+                        {
+                            "dataset": dataset_name,
+                            "collection": collection_name,
+                            "stage": "pooling",
+                            "source_doc_id": source_doc_id,
+                            "union_doc_id": union_doc_id,
+                            "error": repr(exc),
+                        },
+                    )
+                    raise RuntimeError(
+                        "Pooling failed; indexing stopped without dropping pages."
+                    ) from exc
 
                 num_tiles = int(tile_pooled.shape[0])
                 patches_per_tile = (
@@ -1183,7 +1171,7 @@ def _index_beir_corpus(
 
             if executor is not None:
                 _drain(block=False)
-    except KeyboardInterrupt:
+    except BaseException:
         stop_event.set()
         if executor is not None:
             executor.shutdown(wait=False, cancel_futures=True)

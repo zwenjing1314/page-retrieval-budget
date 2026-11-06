@@ -152,6 +152,72 @@ class VisualEmbedder:
 
     def _load_colpali_model(self):
         """Load ColPali-family model."""
+
+        local_base = os.getenv("PRB_COLPALI_BASE")
+        if local_base:
+            from transformers import AutoTokenizer, SiglipImageProcessor
+            from colpali_engine.models import ColPali, ColPaliProcessor
+
+            adapter = Path(self.model_name).resolve()
+            base = Path(local_base).resolve()
+            identities = [
+                (adapter, "vidore/colpali-v1.3",
+                 "b5c6dd62125326e6f0b540c1f7b36e901cdc0a11"),
+                (base, "vidore/colpaligemma-3b-pt-448-base",
+                 "30ab955d073de4a91dc5a288e8c97226647e3e5a"),
+            ]
+            for directory, repo, revision in identities:
+                identity = json.loads(
+                    (directory / "download-manifest.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                if identity["repo"] != repo or identity["revision"] != revision:
+                    raise ValueError("Unexpected fixed model identity")
+
+            if self.torch_dtype != torch.float16:
+                raise ValueError("Fixed ColPali mode requires float16")
+            if self.processor_speed != "slow":
+                raise ValueError(
+                    "Fixed mode requires processor_speed='slow'; "
+                    "the tokenizer is explicitly fast"
+                )
+
+            tokenizer = AutoTokenizer.from_pretrained(
+                str(adapter), local_files_only=True, use_fast=True
+            )
+            if not tokenizer.is_fast:
+                raise ValueError("Expected fast tokenizer")
+            image_processor = SiglipImageProcessor.from_pretrained(
+                str(adapter), local_files_only=True
+            )
+            processor = ColPaliProcessor(
+                image_processor=image_processor, tokenizer=tokenizer
+            )
+
+            model = ColPali.from_pretrained(
+                str(base),
+                local_files_only=True,
+                torch_dtype=torch.float16,
+                device_map=self.device,
+                low_cpu_mem_usage=True,
+                attn_implementation="sdpa",
+            )
+            model.load_adapter(
+                str(adapter),
+                adapter_name="default",
+                is_trainable=False,
+                adapter_kwargs={"local_files_only": True},
+            )
+            model.set_adapter("default")
+            model.eval()
+            model.requires_grad_(False)
+
+            self._model = model
+            self._processor = processor
+            self._image_token_id = processor.image_token_id
+            logger.info("Loaded fixed local ColPali base and adapter")
+            return
         try:
             from colpali_engine.models import (
                 ColIdefics3,

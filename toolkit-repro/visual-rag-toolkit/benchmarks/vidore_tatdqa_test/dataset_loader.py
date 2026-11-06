@@ -52,14 +52,22 @@ def paired_payload(row: Mapping[str, Any], idx: int) -> Dict[str, Any]:
     }
 
 
+def _first_present(row, *keys):
+    """Preserve numeric zero; skip only missing fields and None."""
+    for key in keys:
+        if key in row and row[key] is not None:
+            return row[key]
+    return None
+
+
 def _normalize_qrels(qrels_rows: Iterable[Mapping[str, Any]]) -> Dict[str, Dict[str, int]]:
     qrels: Dict[str, Dict[str, int]] = {}
     for row in qrels_rows:
-        qid = _as_str(row.get("query-id") or row.get("query_id") or row.get("qid"))
+        qid = _as_str(_first_present(row, "query-id", "query_id", "qid"))
         did = _as_str(
-            row.get("corpus-id") or row.get("corpus_id") or row.get("doc_id") or row.get("did")
+            _first_present(row, "corpus-id", "corpus_id", "doc_id", "did")
         )
-        score = row.get("score") or row.get("relevance") or row.get("label") or 0
+        score = _first_present(row, "score", "relevance", "label")
         try:
             score_int = int(score)
         except Exception:
@@ -202,6 +210,46 @@ def _load_beir_from_separate_configs(dataset_name: str, config_names: List[str])
     return _first_split(corpus_ds), _first_split(queries_ds), _first_split(qrels_ds)
 
 
+def _load_fixed_economics_snapshot(snapshot):
+    """Read the verified local four-config snapshot without remote fallback."""
+    import io
+    import json
+    from pathlib import Path
+    import pyarrow.parquet as pq
+    from PIL import Image
+
+    directory = Path(snapshot).resolve()
+    identity = json.loads(
+        (directory / "download-manifest.json").read_text(encoding="utf-8")
+    )
+    if identity["repo"] != "vidore/economics_reports_v2":
+        raise ValueError("Unexpected dataset repository")
+    if identity["revision"] != "76fe40166ba07b1bf50457f5c6057cacdd045f10":
+        raise ValueError("Unexpected Economics revision")
+
+    def read(config):
+        return pq.read_table(
+            directory / config / "test-00000-of-00001.parquet"
+        ).to_pylist()
+
+    pages = read("corpus")
+    queries = read("queries")
+    qrels = read("qrels")
+    docs = read("docs")
+    if (len(pages), len(queries), len(qrels), len(docs)) != (452, 232, 3628, 5):
+        raise ValueError("Unexpected fixed-snapshot counts")
+    if {r["doc-id"] for r in pages} != {r["doc-id"] for r in docs}:
+        raise ValueError("Document identity mapping mismatch")
+
+    # PIL opens embedded bytes lazily. Full decoding was checked in P0.
+    for row in pages:
+        image = row["image"]
+        if not isinstance(image, dict) or not image.get("bytes"):
+            raise ValueError("Missing embedded image bytes")
+        row["image"] = Image.open(io.BytesIO(image["bytes"]))
+    return pages, queries, qrels
+
+
 def load_vidore_beir_dataset(
     dataset_name: str,
 ) -> Tuple[List[CorpusDoc], List[Query], Dict[str, Dict[str, int]]]:
@@ -209,59 +257,67 @@ def load_vidore_beir_dataset(
         from datasets import load_dataset
     except ImportError as e:
         raise ImportError("datasets is required. Install with: pip install datasets") from e
-    resolved = _resolve_vidore_dataset_name(dataset_name)
-    candidates = []
-    for cand in [resolved, dataset_name]:
-        cand = str(cand or "").strip()
-        if not cand:
-            continue
-        if cand not in candidates:
-            candidates.append(cand)
-        if "/" in cand:
-            repo = cand.rsplit("/", 1)[-1]
-            if repo.endswith("_v2"):
-                alt = cand[: -(len("_v2"))]
-                if alt not in candidates:
-                    candidates.append(alt)
-            else:
-                alt = f"{cand}_v2"
-                if alt not in candidates:
-                    candidates.append(alt)
+    import os
 
-    last_err: Optional[Exception] = None
-    extracted = None
-    used_configs: List[str] = []
-    for name_try in candidates:
-        config_names = _get_config_names(name_try)
-        used_configs = config_names
-        ds = None
-        if not config_names or "default" in config_names:
-            try:
-                ds = load_dataset(name_try)
-            except Exception as e:
-                last_err = e
-                ds = None
+    snapshot = os.getenv("PRB_ECONOMICS_SNAPSHOT")
+    if snapshot:
+        if dataset_name != "vidore/economics_reports_v2":
+            raise ValueError("Fixed local mode only accepts the Economics repository ID")
+        extracted = _load_fixed_economics_snapshot(snapshot)
+    else:
+        resolved = _resolve_vidore_dataset_name(dataset_name)
+        candidates = []
+        for cand in [resolved, dataset_name]:
+            cand = str(cand or "").strip()
+            if not cand:
+                continue
+            if cand not in candidates:
+                candidates.append(cand)
+            if "/" in cand:
+                repo = cand.rsplit("/", 1)[-1]
+                if repo.endswith("_v2"):
+                    alt = cand[: -(len("_v2"))]
+                    if alt not in candidates:
+                        candidates.append(alt)
+                else:
+                    alt = f"{cand}_v2"
+                    if alt not in candidates:
+                        candidates.append(alt)
 
-        extracted = _extract_beir_splits(ds) if ds is not None else None
-        if extracted is None:
-            ds_beir = _load_dataset_with_beir_config(name_try, config_names)
-            if ds_beir is not None:
-                extracted = _extract_beir_splits(ds_beir)
+        last_err: Optional[Exception] = None
+        extracted = None
+        used_configs: List[str] = []
+        for name_try in candidates:
+            config_names = _get_config_names(name_try)
+            used_configs = config_names
+            ds = None
+            if not config_names or "default" in config_names:
+                try:
+                    ds = load_dataset(name_try)
+                except Exception as e:
+                    last_err = e
+                    ds = None
+
+            extracted = _extract_beir_splits(ds) if ds is not None else None
             if extracted is None:
-                extracted = _load_beir_from_separate_configs(name_try, config_names)
-        if extracted is not None:
-            break
+                ds_beir = _load_dataset_with_beir_config(name_try, config_names)
+                if ds_beir is not None:
+                    extracted = _extract_beir_splits(ds_beir)
+                if extracted is None:
+                    extracted = _load_beir_from_separate_configs(name_try, config_names)
+            if extracted is not None:
+                break
 
-    if extracted is None:
-        if last_err is not None and not used_configs:
+        if extracted is None:
+            if last_err is not None and not used_configs:
+                raise ValueError(
+                    "Could not load dataset (check the dataset id and HF access). "
+                    f"Tried: {candidates}."
+                ) from last_err
             raise ValueError(
-                "Could not load dataset (check the dataset id and HF access). "
-                f"Tried: {candidates}."
-            ) from last_err
-        raise ValueError(
-            "Dataset does not look like BEIR/ViDoRe-v2 format. "
-            f"Tried: {candidates}. Available configs: {used_configs or 'unknown'}"
-        )
+                "Dataset does not look like BEIR/ViDoRe-v2 format. "
+                f"Tried: {candidates}. Available configs: {used_configs or 'unknown'}"
+            )
 
     corpus_split, queries_split, qrels_split = extracted
 

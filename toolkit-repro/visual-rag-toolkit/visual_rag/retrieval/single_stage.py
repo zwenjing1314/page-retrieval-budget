@@ -12,6 +12,7 @@ import logging
 from typing import Any, Dict, List, Union
 
 import numpy as np
+from qdrant_client import models as qdrant_models
 import torch
 
 logger = logging.getLogger(__name__)
@@ -125,6 +126,7 @@ class SingleStageRetriever:
             query=query_vector,
             using=vector_name,
             query_filter=filter_obj,
+            search_params=qdrant_models.SearchParams(exact=True),
             limit=top_k,
             with_payload=True,
             with_vectors=False,

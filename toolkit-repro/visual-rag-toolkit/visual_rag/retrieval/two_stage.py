@@ -172,6 +172,7 @@ class TwoStageRetriever:
                         query=prefetch_query,
                         using=prefetch_using,
                         limit=prefetch_k,
+                        params=qdrant_models.SearchParams(exact=True),
                     )
                 ],
                 timeout=self.request_timeout,
