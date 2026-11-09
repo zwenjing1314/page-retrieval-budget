@@ -3,3 +3,13 @@ toolkit-repro/models
 toolkit-repro/records
 
 /toolkit-repro/cache/
+
+docs
+!docs/
+docs/*
+!docs/research/
+docs/research/*
+!docs/research/Economics语义池化对照阶段报告.md
+!docs/handoff/
+docs/handoff/*
+!docs/handoff/Economics语义池化对照交接材料.md

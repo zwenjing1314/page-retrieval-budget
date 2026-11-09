@@ -10,6 +10,7 @@
 - [启动核查](./research/启动核查.md)
 - [核查材料_omnicolpress](./research/核查材料_omnicolpress.md)
 - [核查材料_其他复现项目](./research/核查材料_其他复现项目.md)
+- [Economics 语义池化对照阶段报告](./research/Economics语义池化对照阶段报告.md)
 
 ## 交接资料
 
@@ -18,6 +19,7 @@
 - [研究交接说明](./handoff/研究交接说明.md)
 - [新窗口启动提示词](./handoff/新窗口启动提示词.md)
 - [新窗口首条消息](./handoff/新窗口首条消息.txt)
+- [Economics 语义池化对照交接材料](./handoff/Economics语义池化对照交接材料.md)
 
 ## 历史与备份
 
