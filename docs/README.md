@@ -11,15 +11,19 @@
 - [核查材料_omnicolpress](./research/核查材料_omnicolpress.md)
 - [核查材料_其他复现项目](./research/核查材料_其他复现项目.md)
 - [Economics 语义池化对照阶段报告](./research/Economics语义池化对照阶段报告.md)
+- [Economics 层次池化两阶段检索阶段报告](./research/Economics层次池化两阶段检索阶段报告.md)
+- [Economics 论文池化 34 向量对照阶段报告（空簇阻塞，部分完成）](./research/Economics论文池化34向量对照阶段报告.md)
 
 ## 交接资料
 
 历史资料不等于当前操作指令。继续工作时先读项目 README 和执行计划，
-遵循“用户执行、分批指导、反馈验收”的约定。
+历史“用户执行、分批指导、反馈验收”约定已被 2026-11-10 本轮用户自主执行授权覆盖；具体范围见本轮交接材料。
 - [研究交接说明](./handoff/研究交接说明.md)
 - [新窗口启动提示词](./handoff/新窗口启动提示词.md)
 - [新窗口首条消息](./handoff/新窗口首条消息.txt)
 - [Economics 语义池化对照交接材料](./handoff/Economics语义池化对照交接材料.md)
+- [Economics 层次池化两阶段检索交接材料](./handoff/Economics层次池化两阶段检索交接材料.md)
+- [Economics 论文池化 34 向量对照交接材料](./handoff/Economics论文池化34向量对照交接材料.md)
 
 ## 历史与备份
 

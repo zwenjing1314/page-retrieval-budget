@@ -4,6 +4,7 @@ toolkit-repro/records
 
 /toolkit-repro/cache/
 
+tmp
 docs
 !docs/
 docs/*

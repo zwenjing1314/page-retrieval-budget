@@ -5,6 +5,10 @@
 
 ## 当前进度
 
+2026-11-10：34 向量预算的论文顺序/K-means 视觉适配对照已保存部分结果。顺序方法及 K-means seed 0、1 完成全库评价；预登记 seed 2 在 corpus 258 出现空簇，依规则停止，未替换种子或修改算法。见[阶段报告](docs/research/Economics论文池化34向量对照阶段报告.md)、[交接材料](docs/handoff/Economics论文池化34向量对照交接材料.md)。这不是三种子完整验收。
+
+2026-11-10：已完成固定 top256 的层次池化预筛与完整 MaxSim 重排实验（全 452 页、232 题）。见[本次阶段报告](docs/research/Economics层次池化两阶段检索阶段报告.md)及[交接材料](docs/handoff/Economics层次池化两阶段检索交接材料.md)。本轮按用户最新授权自主执行，覆盖下文历史手动执行约定；本实验完成后停止。
+
 P0 环境与模型/数据准备已完成，依据本轮人工执行反馈及保留记录登记：
 独立 Conda 环境、GPU 版 PyTorch、Toolkit 依赖、Qdrant 服务、
 Economics 数据和固定模型文件已完成准备及对应检查。
