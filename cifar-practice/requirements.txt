@@ -1,4 +1,5 @@
-# 2080 Ti 图灵卡：cu124 wheel，PyTorch 2.6 + torchvision 0.21
-# 云端用：pip install -r requirements.txt
-torch==2.6.0
-torchvision==0.21.0
+# AutoDL 镜像已自带 PyTorch 2.5.1 + torchvision（Python 3.12 / CUDA 12.4）
+# 本练习只依赖 torch + torchvision，镜像环境开箱即用，无需 pip install。
+# 下面两行仅作版本记录——正常情况请勿执行，否则会重新下载数 GB、浪费计费时间。
+# torch==2.5.1
+# torchvision==0.20.1
