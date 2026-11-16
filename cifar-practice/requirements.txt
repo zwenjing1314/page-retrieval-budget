@@ -1,0 +1,4 @@
+# 2080 Ti 图灵卡：cu124 wheel，PyTorch 2.6 + torchvision 0.21
+# 云端用：pip install -r requirements.txt
+torch==2.6.0
+torchvision==0.21.0

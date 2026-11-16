@@ -14,3 +14,17 @@ docs/research/*
 !docs/handoff/
 docs/handoff/*
 !docs/handoff/Economics语义池化对照交接材料.md
+
+# ===== practice/cloud-exercise 云端练习：大文件与产物，不上传 =====
+# 上传包（含完整数据集，约 163MB）
+/cifar-practice-bundle.zip
+# CIFAR-10 数据集（解压后约 178MB）
+/cifar-practice/data/
+# 训练产物：checkpoint、日志、模型权重
+/cifar-practice/checkpoint/
+/cifar-practice/runs/
+/cifar-practice/*.pth
+/cifar-practice/*.log
+# Python 缓存
+__pycache__/
+*.py[cod]
